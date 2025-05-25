@@ -178,14 +178,7 @@ const ReportPage = () => {
                 <SelectItem value="all">Todas as subcategorias</SelectItem>
                 {allSubcategories.map(subcategory => (
                   <SelectItem key={subcategory.id} value={subcategory.id}>
-                    <div className="flex items-center">
-                      <div 
-                        className="w-3 h-3 rounded-full mr-2" 
-                        style={{ backgroundColor: subcategory.categoryColor }}
-                      />
-                      <span>{subcategory.name}</span>
-                      <span className="text-gray-500 text-sm ml-1">({subcategory.categoryName})</span>
-                    </div>
+                    {subcategory.name} ({subcategory.categoryName})
                   </SelectItem>
                 ))}
               </SelectContent>
