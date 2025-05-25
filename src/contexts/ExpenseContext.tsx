@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Category {
   id: string;
@@ -32,66 +33,85 @@ interface ExpenseContextType {
   addExpense: (amount: number, date: string, subcategoryId: string, categoryId: string) => void;
   deleteExpense: (id: string) => void;
   updateExpense: (id: string, amount: number, date: string, subcategoryId: string, categoryId: string) => void;
-  exportData: () => string;
-  importData: (jsonData: string) => boolean;
   getSubcategory: (id: string) => Subcategory | undefined;
   getCategory: (id: string) => Category | undefined;
+  exportData: () => string;
+  importData: (jsonData: string) => boolean;
 }
 
 const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'expense_tracker_data';
-
-const defaultCategories: Category[] = [
-  {
-    id: '1',
-    name: 'Alimentação',
-    color: '#10B981',
-    subcategories: [
-      { id: '1-1', name: 'Mercado', categoryId: '1' },
-      { id: '1-2', name: 'Restaurante', categoryId: '1' },
-      { id: '1-3', name: 'Bebida', categoryId: '1' },
-    ]
-  },
-  {
-    id: '2',
-    name: 'Transporte',
-    color: '#3B82F6',
-    subcategories: [
-      { id: '2-1', name: 'Combustível', categoryId: '2' },
-      { id: '2-2', name: 'Mecânica', categoryId: '2' },
-      { id: '2-3', name: 'Transporte Público', categoryId: '2' },
-    ]
-  }
-];
+const generateRandomColor = () => {
+  const colors = [
+    '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
+    '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6B7280'
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+};
 
 export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [categories, setCategories] = useState<Category[]>(defaultCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
 
+  // Carregar dados do localStorage ao inicializar
   useEffect(() => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        setCategories(parsed.categories || defaultCategories);
-        setExpenses(parsed.expenses || []);
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-      }
+    const savedCategories = localStorage.getItem('expense-categories');
+    const savedExpenses = localStorage.getItem('expense-expenses');
+
+    if (savedCategories) {
+      setCategories(JSON.parse(savedCategories));
+    } else {
+      // Categorias padrão
+      const defaultCategories: Category[] = [
+        {
+          id: uuidv4(),
+          name: 'Alimentação',
+          color: '#EF4444',
+          subcategories: [
+            { id: uuidv4(), name: 'Restaurante', categoryId: '' },
+            { id: uuidv4(), name: 'Supermercado', categoryId: '' }
+          ]
+        },
+        {
+          id: uuidv4(),
+          name: 'Transporte',
+          color: '#3B82F6',
+          subcategories: [
+            { id: uuidv4(), name: 'Combustível', categoryId: '' },
+            { id: uuidv4(), name: 'Uber/Taxi', categoryId: '' }
+          ]
+        }
+      ];
+
+      // Corrigir categoryId das subcategorias
+      defaultCategories.forEach(category => {
+        category.subcategories.forEach(sub => {
+          sub.categoryId = category.id;
+        });
+      });
+
+      setCategories(defaultCategories);
+    }
+
+    if (savedExpenses) {
+      setExpenses(JSON.parse(savedExpenses));
     }
   }, []);
 
+  // Salvar no localStorage sempre que houver mudança
   useEffect(() => {
-    const dataToSave = { categories, expenses };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-  }, [categories, expenses]);
+    localStorage.setItem('expense-categories', JSON.stringify(categories));
+  }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem('expense-expenses', JSON.stringify(expenses));
+  }, [expenses]);
 
   const addCategory = (name: string) => {
     const newCategory: Category = {
-      id: Date.now().toString(),
+      id: uuidv4(),
       name,
-      color: `#${Math.floor(Math.random()*16777215).toString(16)}`,
+      color: generateRandomColor(),
       subcategories: []
     };
     setCategories(prev => [...prev, newCategory]);
@@ -104,11 +124,11 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addSubcategory = (name: string, categoryId: string) => {
     const newSubcategory: Subcategory = {
-      id: `${categoryId}-${Date.now()}`,
+      id: uuidv4(),
       name,
       categoryId
     };
-    
+
     setCategories(prev => prev.map(cat => 
       cat.id === categoryId 
         ? { ...cat, subcategories: [...cat.subcategories, newSubcategory] }
@@ -126,7 +146,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addExpense = (amount: number, date: string, subcategoryId: string, categoryId: string) => {
     const newExpense: Expense = {
-      id: Date.now().toString(),
+      id: uuidv4(),
       amount,
       date,
       subcategoryId,
@@ -140,32 +160,14 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateExpense = (id: string, amount: number, date: string, subcategoryId: string, categoryId: string) => {
-    setExpenses(prev => prev.map(exp =>
-      exp.id === id ? { ...exp, amount, date, subcategoryId, categoryId } : exp
+    setExpenses(prev => prev.map(exp => 
+      exp.id === id 
+        ? { ...exp, amount, date, subcategoryId, categoryId }
+        : exp
     ));
   };
 
-  const exportData = () => {
-    const dataToExport = { categories, expenses };
-    return JSON.stringify(dataToExport, null, 2);
-  };
-
-  const importData = (jsonData: string) => {
-    try {
-      const parsed = JSON.parse(jsonData);
-      if (parsed.categories && parsed.expenses) {
-        setCategories(parsed.categories);
-        setExpenses(parsed.expenses);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Erro ao importar dados:', error);
-      return false;
-    }
-  };
-
-  const getSubcategory = (id: string) => {
+  const getSubcategory = (id: string): Subcategory | undefined => {
     for (const category of categories) {
       const subcategory = category.subcategories.find(sub => sub.id === id);
       if (subcategory) return subcategory;
@@ -173,26 +175,46 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return undefined;
   };
 
-  const getCategory = (id: string) => {
+  const getCategory = (id: string): Category | undefined => {
     return categories.find(cat => cat.id === id);
   };
 
+  const exportData = (): string => {
+    return JSON.stringify({ categories, expenses }, null, 2);
+  };
+
+  const importData = (jsonData: string): boolean => {
+    try {
+      const data = JSON.parse(jsonData);
+      if (data.categories && data.expenses) {
+        setCategories(data.categories);
+        setExpenses(data.expenses);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
+  const value: ExpenseContextType = {
+    categories,
+    expenses,
+    addCategory,
+    deleteCategory,
+    addSubcategory,
+    deleteSubcategory,
+    addExpense,
+    deleteExpense,
+    updateExpense,
+    getSubcategory,
+    getCategory,
+    exportData,
+    importData
+  };
+
   return (
-    <ExpenseContext.Provider value={{
-      categories,
-      expenses,
-      addCategory,
-      deleteCategory,
-      addSubcategory,
-      deleteSubcategory,
-      addExpense,
-      deleteExpense,
-      updateExpense,
-      exportData,
-      importData,
-      getSubcategory,
-      getCategory
-    }}>
+    <ExpenseContext.Provider value={value}>
       {children}
     </ExpenseContext.Provider>
   );
@@ -200,7 +222,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 export const useExpense = () => {
   const context = useContext(ExpenseContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useExpense must be used within an ExpenseProvider');
   }
   return context;

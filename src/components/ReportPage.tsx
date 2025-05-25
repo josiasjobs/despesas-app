@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Upload } from 'lucide-react';
@@ -6,6 +5,13 @@ import { useExpense } from '../contexts/ExpenseContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+
+interface SubcategoryData {
+  name: string;
+  value: number;
+  color: string;
+  categoryName: string;
+}
 
 const ReportPage = () => {
   const navigate = useNavigate();
@@ -26,7 +32,7 @@ const ReportPage = () => {
   }).filter(item => item.value > 0);
 
   // Calcular dados para o gráfico por subcategoria
-  const subcategoryData = categories.flatMap(category => 
+  const subcategoryData: SubcategoryData[] = categories.flatMap(category => 
     category.subcategories.map(subcategory => {
       const subcategoryExpenses = expenses.filter(expense => expense.subcategoryId === subcategory.id);
       const total = subcategoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -167,7 +173,7 @@ const ReportPage = () => {
                       style={{ backgroundColor: item.color }}
                     />
                     <span className="text-gray-700">{item.name}</span>
-                    {viewType === 'subcategory' && (
+                    {viewType === 'subcategory' && 'categoryName' in item && (
                       <span className="text-gray-500 text-sm ml-1">({item.categoryName})</span>
                     )}
                   </div>
