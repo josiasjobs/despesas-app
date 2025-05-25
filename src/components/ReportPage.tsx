@@ -5,6 +5,7 @@ import { useExpense } from '../contexts/ExpenseContext';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SubcategoryData {
   name: string;
@@ -18,6 +19,7 @@ const ReportPage = () => {
   const { categories, expenses, exportData, importData } = useExpense();
   const { toast } = useToast();
   const [viewType, setViewType] = useState<'category' | 'subcategory'>('category');
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
 
   // Calcular dados para o gráfico por categoria
   const categoryData = categories.map(category => {
@@ -46,8 +48,30 @@ const ReportPage = () => {
     })
   ).filter(item => item.value > 0);
 
-  const currentData = viewType === 'category' ? categoryData : subcategoryData;
+  // Filtrar subcategorias baseado no filtro selecionado
+  const filteredSubcategoryData = subcategoryFilter === 'all' 
+    ? subcategoryData 
+    : subcategoryData.filter(item => {
+        const subcategory = categories.flatMap(cat => cat.subcategories).find(sub => sub.name === item.name);
+        return subcategory?.id === subcategoryFilter;
+      });
+
+  const currentData = viewType === 'category' ? categoryData : filteredSubcategoryData;
   const totalGeral = currentData.reduce((sum, item) => sum + item.value, 0);
+
+  // Lista de todas as subcategorias para o filtro
+  const allSubcategories = categories.flatMap(category => 
+    category.subcategories.map(sub => ({
+      id: sub.id,
+      name: sub.name,
+      categoryName: category.name,
+      categoryColor: category.color
+    }))
+  ).filter(sub => {
+    // Só mostrar subcategorias que têm despesas
+    const hasExpenses = expenses.some(expense => expense.subcategoryId === sub.id);
+    return hasExpenses;
+  });
 
   const handleExportData = () => {
     try {
@@ -142,6 +166,32 @@ const ReportPage = () => {
             Por Subcategoria
           </button>
         </div>
+
+        {/* Filtro de subcategorias - só mostra quando viewType é subcategory */}
+        {viewType === 'subcategory' && (
+          <div className="mb-6">
+            <Select value={subcategoryFilter} onValueChange={setSubcategoryFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Filtrar por subcategoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as subcategorias</SelectItem>
+                {allSubcategories.map(subcategory => (
+                  <SelectItem key={subcategory.id} value={subcategory.id}>
+                    <div className="flex items-center">
+                      <div 
+                        className="w-3 h-3 rounded-full mr-2" 
+                        style={{ backgroundColor: subcategory.categoryColor }}
+                      />
+                      <span>{subcategory.name}</span>
+                      <span className="text-gray-500 text-sm ml-1">({subcategory.categoryName})</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {currentData.length > 0 ? (
           <>
