@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Upload } from 'lucide-react';
 import { useExpense } from '../contexts/ExpenseContext';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface SubcategoryData {
   name: string;
@@ -248,9 +247,8 @@ const ReportPage = () => {
             <Button
               variant="outline"
               className="w-full py-3 text-lg border-2 border-orange-300 text-orange-700 hover:bg-orange-50"
-              asChild
             >
-              <label htmlFor="import-file" className="cursor-pointer flex items-center justify-center">
+              <label htmlFor="import-file" className="cursor-pointer flex items-center justify-center w-full h-full">
                 <Upload className="w-5 h-5 mr-2" />
                 Restaurar Dados
               </label>
