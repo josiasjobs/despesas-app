@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Upload } from 'lucide-react';
@@ -14,6 +15,12 @@ interface SubcategoryData {
   categoryName: string;
 }
 
+interface CategoryData {
+  name: string;
+  value: number;
+  color: string;
+}
+
 const ReportPage = () => {
   const navigate = useNavigate();
   const { categories, expenses, exportData, importData } = useExpense();
@@ -22,7 +29,7 @@ const ReportPage = () => {
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
 
   // Calcular dados para o gráfico por categoria
-  const categoryData = categories.map(category => {
+  const categoryData: CategoryData[] = categories.map(category => {
     const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
     const total = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
@@ -178,7 +185,7 @@ const ReportPage = () => {
                 <SelectItem value="all">Todas as subcategorias</SelectItem>
                 {allSubcategories.map(subcategory => (
                   <SelectItem key={subcategory.id} value={subcategory.id}>
-                    {subcategory.name} ({subcategory.categoryName})
+                    {`${subcategory.name} (${subcategory.categoryName})`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -217,7 +224,7 @@ const ReportPage = () => {
                     />
                     <span className="text-gray-700">{item.name}</span>
                     {viewType === 'subcategory' && 'categoryName' in item && (
-                      <span className="text-gray-500 text-sm ml-1">({item.categoryName})</span>
+                      <span className="text-gray-500 text-sm ml-1">({(item as SubcategoryData).categoryName})</span>
                     )}
                   </div>
                 ))}
