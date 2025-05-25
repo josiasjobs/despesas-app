@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Download, Upload } from 'lucide-react';
 import { useExpense } from '../contexts/ExpenseContext';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
