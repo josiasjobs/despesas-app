@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Settings, BarChart3, History } from 'lucide-react';
+import { Plus, Settings, BarChart3, History, ShoppingCart } from 'lucide-react';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -24,6 +24,14 @@ const HomePage = () => {
           </button>
 
           <button
+            onClick={() => navigate('/lista-compras')}
+            className="bg-purple-500 hover:bg-purple-600 text-white p-6 rounded-2xl flex flex-col items-center justify-center min-h-[140px] transition-colors"
+          >
+            <ShoppingCart className="w-8 h-8 mb-2" />
+            <span className="text-lg font-medium">Lista de Compras</span>
+          </button>
+
+          <button
             onClick={() => navigate('/categorias')}
             className="bg-green-500 hover:bg-green-600 text-white p-6 rounded-2xl flex flex-col items-center justify-center min-h-[140px] transition-colors"
           >
@@ -41,7 +49,7 @@ const HomePage = () => {
 
           <button
             onClick={() => navigate('/historico')}
-            className="bg-gray-600 hover:bg-gray-700 text-white p-6 rounded-2xl flex flex-col items-center justify-center min-h-[140px] transition-colors"
+            className="bg-gray-600 hover:bg-gray-700 text-white p-6 rounded-2xl flex flex-col items-center justify-center min-h-[140px] transition-colors col-span-2"
           >
             <History className="w-8 h-8 mb-2" />
             <span className="text-lg font-medium">Histórico</span>

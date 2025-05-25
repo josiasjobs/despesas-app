@@ -6,10 +6,12 @@ import { useExpense } from '../contexts/ExpenseContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const NewExpensePage = () => {
   const navigate = useNavigate();
   const { categories, addExpense, getSubcategory, getCategory } = useExpense();
+  const { toast } = useToast();
   
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -70,7 +72,19 @@ const NewExpensePage = () => {
         sessionValues.forEach(value => {
           addExpense(value, date, selectedSubcategory, subcategory.categoryId);
         });
-        navigate('/relatorio');
+        
+        // Limpar os dados da sessão
+        setSessionValues([]);
+        setCurrentValue('');
+        setSelectedSubcategory('');
+        
+        // Mostrar toast de sucesso
+        toast({
+          title: "Despesas adicionadas com sucesso!",
+          description: `${sessionValues.length} despesa(s) foram registradas.`,
+        });
+        
+        // Permanecer na mesma tela ao invés de navegar
       }
     }
   };
