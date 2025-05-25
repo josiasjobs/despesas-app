@@ -1,0 +1,199 @@
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, X } from 'lucide-react';
+import { useExpense } from '../contexts/ExpenseContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+
+const NewExpensePage = () => {
+  const navigate = useNavigate();
+  const { categories, addExpense, getSubcategory, getCategory } = useExpense();
+  
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentValue, setCurrentValue] = useState('');
+  const [sessionValues, setSessionValues] = useState<number[]>([]);
+
+  const allSubcategories = categories.flatMap(cat => 
+    cat.subcategories.map(sub => ({
+      ...sub,
+      categoryName: cat.name,
+      categoryColor: cat.color
+    }))
+  );
+
+  const sessionTotal = sessionValues.reduce((sum, val) => sum + val, 0);
+
+  const handleValueSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = parseFloat(currentValue.replace(',', '.'));
+    
+    if (value > 0 && selectedSubcategory) {
+      setSessionValues(prev => [...prev, value]);
+      setCurrentValue('');
+    }
+  };
+
+  const removeSessionValue = (index: number) => {
+    setSessionValues(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleValueSubmit(e);
+    }
+  };
+
+  const finalizarCategoria = () => {
+    if (sessionValues.length > 0 && selectedSubcategory) {
+      const subcategory = getSubcategory(selectedSubcategory);
+      if (subcategory) {
+        sessionValues.forEach(value => {
+          addExpense(value, date, selectedSubcategory, subcategory.categoryId);
+        });
+        navigate('/relatorio');
+      }
+    }
+  };
+
+  const limpar = () => {
+    setSessionValues([]);
+    setCurrentValue('');
+  };
+
+  const selectedSubcategoryData = allSubcategories.find(sub => sub.id === selectedSubcategory);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-md mx-auto">
+        <div className="flex items-center mb-6">
+          <button onClick={() => navigate('/')} className="mr-4">
+            <ArrowLeft className="w-6 h-6 text-gray-600" />
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">Nova Despesa</h1>
+        </div>
+
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Subcategoria
+            </label>
+            <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione uma subcategoria" />
+              </SelectTrigger>
+              <SelectContent>
+                {allSubcategories.map(sub => (
+                  <SelectItem key={sub.id} value={sub.id}>
+                    <div className="flex items-center">
+                      <div 
+                        className="w-3 h-3 rounded-full mr-2" 
+                        style={{ backgroundColor: sub.categoryColor }}
+                      />
+                      <span className="font-medium">{sub.name}</span>
+                      <span className="text-gray-500 ml-2">({sub.categoryName})</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedSubcategoryData && (
+              <div className="mt-1 text-sm text-gray-600">
+                {selectedSubcategoryData.categoryName}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Data
+            </label>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Valor
+            </label>
+            <form onSubmit={handleValueSubmit}>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                  R$
+                </span>
+                <Input
+                  type="text"
+                  value={currentValue}
+                  onChange={(e) => setCurrentValue(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="0,00"
+                  className="pl-10 text-lg font-medium border-2 border-blue-500 focus:border-blue-600"
+                />
+              </div>
+            </form>
+            <p className="text-sm text-gray-500 mt-1">
+              Pressione Enter para adicionar rapidamente
+            </p>
+          </div>
+
+          {sessionValues.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-3">
+                Valores desta sessão:
+              </h3>
+              <div className="space-y-2">
+                {sessionValues.map((value, index) => (
+                  <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg">
+                    <span className="font-medium">R$ {value.toFixed(2).replace('.', ',')}</span>
+                    <button
+                      onClick={() => removeSessionValue(index)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Total da sessão:</span>
+                  <span className="text-xl font-bold text-blue-600">
+                    R$ {sessionTotal.toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex space-x-3 pt-4">
+            <Button
+              onClick={finalizarCategoria}
+              className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 text-lg"
+              disabled={sessionValues.length === 0 || !selectedSubcategory}
+            >
+              Finalizar Categoria
+            </Button>
+            <Button
+              onClick={limpar}
+              variant="secondary"
+              className="px-6 py-3 text-lg"
+              disabled={sessionValues.length === 0}
+            >
+              Limpar
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default NewExpensePage;
