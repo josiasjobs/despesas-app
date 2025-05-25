@@ -28,11 +28,27 @@ const NewExpensePage = () => {
 
   const handleValueSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('handleValueSubmit called');
+    console.log('currentValue:', currentValue);
+    console.log('selectedSubcategory:', selectedSubcategory);
+    
     const value = parseFloat(currentValue.replace(',', '.'));
+    console.log('parsed value:', value);
     
     if (value > 0 && selectedSubcategory) {
-      setSessionValues(prev => [...prev, value]);
+      console.log('Adding value to session:', value);
+      setSessionValues(prev => {
+        const newValues = [...prev, value];
+        console.log('new sessionValues:', newValues);
+        return newValues;
+      });
       setCurrentValue('');
+    } else {
+      console.log('Value not added. Conditions not met:', {
+        valueGreaterThanZero: value > 0,
+        hasSubcategory: !!selectedSubcategory,
+        isValidNumber: !isNaN(value)
+      });
     }
   };
 
@@ -65,6 +81,11 @@ const NewExpensePage = () => {
   };
 
   const selectedSubcategoryData = allSubcategories.find(sub => sub.id === selectedSubcategory);
+
+  // Log para debug
+  useEffect(() => {
+    console.log('sessionValues updated:', sessionValues);
+  }, [sessionValues]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -137,6 +158,7 @@ const NewExpensePage = () => {
                   className="pl-10 text-lg font-medium border-2 border-blue-500 focus:border-blue-600"
                 />
               </div>
+              <button type="submit" className="hidden">Submit</button>
             </form>
             <p className="text-sm text-gray-500 mt-1">
               Pressione Enter para adicionar rapidamente
