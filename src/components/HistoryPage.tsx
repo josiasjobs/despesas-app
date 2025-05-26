@@ -6,7 +6,7 @@ import { useExpense } from '../contexts/ExpenseContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,17 +35,33 @@ const HistoryPage = () => {
   const [editDate, setEditDate] = useState('');
   const [editSubcategory, setEditSubcategory] = useState('');
   const [filter, setFilter] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  // Gerar opções de anos baseado nas despesas
+  const availableYears = Array.from(new Set(expenses.map(expense => 
+    new Date(expense.date).getFullYear()
+  ))).sort((a, b) => b - a);
+
+  // Filtrar despesas por categoria, mês e ano
+  const filteredExpenses = expenses.filter(expense => {
+    const categoryMatch = filter === 'all' || expense.categoryId === filter;
+    
+    const expenseDate = new Date(expense.date);
+    const expenseMonth = expenseDate.getMonth() + 1;
+    const expenseYear = expenseDate.getFullYear();
+
+    const monthMatch = selectedMonth === 'all' || expenseMonth.toString() === selectedMonth;
+    const yearMatch = selectedYear === 'all' || expenseYear.toString() === selectedYear;
+
+    return categoryMatch && monthMatch && yearMatch;
+  });
+
   // Ordenar despesas por data (mais recente primeiro)
-  const sortedExpenses = [...expenses].sort((a, b) => 
+  const sortedExpenses = [...filteredExpenses].sort((a, b) => 
     new Date(b.date).getTime() - new Date(a.date).getTime()
   );
-
-  // Filtrar despesas
-  const filteredExpenses = filter === 'all' 
-    ? sortedExpenses 
-    : sortedExpenses.filter(expense => expense.categoryId === filter);
 
   const allSubcategories = categories.flatMap(cat => 
     cat.subcategories.map(sub => ({
@@ -81,6 +97,21 @@ const HistoryPage = () => {
     setIsDialogOpen(false);
   };
 
+  const months = [
+    { value: '1', label: 'Janeiro' },
+    { value: '2', label: 'Fevereiro' },
+    { value: '3', label: 'Março' },
+    { value: '4', label: 'Abril' },
+    { value: '5', label: 'Maio' },
+    { value: '6', label: 'Junho' },
+    { value: '7', label: 'Julho' },
+    { value: '8', label: 'Agosto' },
+    { value: '9', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-md mx-auto">
@@ -91,8 +122,8 @@ const HistoryPage = () => {
           <h1 className="text-2xl font-bold text-gray-900">Histórico</h1>
         </div>
 
-        {/* Filtro */}
-        <div className="mb-6">
+        {/* Filtros */}
+        <div className="space-y-3 mb-6">
           <Select value={filter} onValueChange={setFilter}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Filtrar por categoria" />
@@ -112,12 +143,42 @@ const HistoryPage = () => {
               ))}
             </SelectContent>
           </Select>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os meses</SelectItem>
+                {months.map(month => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os anos</SelectItem>
+                {availableYears.map(year => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Lista de despesas */}
         <div className="space-y-3">
-          {filteredExpenses.length > 0 ? (
-            filteredExpenses.map(expense => {
+          {sortedExpenses.length > 0 ? (
+            sortedExpenses.map(expense => {
               const subcategory = getSubcategory(expense.subcategoryId);
               const category = getCategory(expense.categoryId);
               
@@ -188,7 +249,7 @@ const HistoryPage = () => {
             })
           ) : (
             <div className="bg-white rounded-lg p-8 text-center shadow-sm">
-              <p className="text-gray-500">Nenhuma despesa encontrada.</p>
+              <p className="text-gray-500">Nenhuma despesa encontrada para os filtros selecionados.</p>
             </div>
           )}
         </div>
@@ -240,6 +301,7 @@ const HistoryPage = () => {
                   </span>
                   <Input
                     type="text"
+                    inputMode="decimal"
                     value={editAmount}
                     onChange={(e) => setEditAmount(e.target.value)}
                     className="pl-10"

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -24,10 +25,29 @@ const ReportPage = () => {
   const { categories, expenses } = useExpense();
   const [viewType, setViewType] = useState<'category' | 'subcategory'>('category');
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedYear, setSelectedYear] = useState<string>('all');
 
-  // Calcular dados para o gráfico por categoria
+  // Gerar opções de anos baseado nas despesas
+  const availableYears = Array.from(new Set(expenses.map(expense => 
+    new Date(expense.date).getFullYear()
+  ))).sort((a, b) => b - a);
+
+  // Filtrar despesas por mês e ano
+  const filteredExpenses = expenses.filter(expense => {
+    const expenseDate = new Date(expense.date);
+    const expenseMonth = expenseDate.getMonth() + 1;
+    const expenseYear = expenseDate.getFullYear();
+
+    const monthMatch = selectedMonth === 'all' || expenseMonth.toString() === selectedMonth;
+    const yearMatch = selectedYear === 'all' || expenseYear.toString() === selectedYear;
+
+    return monthMatch && yearMatch;
+  });
+
+  // Calcular dados para o gráfico por categoria usando despesas filtradas
   const categoryData: CategoryData[] = categories.map(category => {
-    const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
+    const categoryExpenses = filteredExpenses.filter(expense => expense.categoryId === category.id);
     const total = categoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
     
     return {
@@ -37,10 +57,10 @@ const ReportPage = () => {
     };
   }).filter(item => item.value > 0);
 
-  // Calcular dados para o gráfico por subcategoria
+  // Calcular dados para o gráfico por subcategoria usando despesas filtradas
   const subcategoryData: SubcategoryData[] = categories.flatMap(category => 
     category.subcategories.map(subcategory => {
-      const subcategoryExpenses = expenses.filter(expense => expense.subcategoryId === subcategory.id);
+      const subcategoryExpenses = filteredExpenses.filter(expense => expense.subcategoryId === subcategory.id);
       const total = subcategoryExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       
       return {
@@ -72,10 +92,25 @@ const ReportPage = () => {
       categoryColor: category.color
     }))
   ).filter(sub => {
-    // Só mostrar subcategorias que têm despesas
-    const hasExpenses = expenses.some(expense => expense.subcategoryId === sub.id);
+    // Só mostrar subcategorias que têm despesas nas despesas filtradas
+    const hasExpenses = filteredExpenses.some(expense => expense.subcategoryId === sub.id);
     return hasExpenses;
   });
+
+  const months = [
+    { value: '1', label: 'Janeiro' },
+    { value: '2', label: 'Fevereiro' },
+    { value: '3', label: 'Março' },
+    { value: '4', label: 'Abril' },
+    { value: '5', label: 'Maio' },
+    { value: '6', label: 'Junho' },
+    { value: '7', label: 'Julho' },
+    { value: '8', label: 'Agosto' },
+    { value: '9', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -85,6 +120,40 @@ const ReportPage = () => {
             <ArrowLeft className="w-6 h-6 text-gray-600" />
           </button>
           <h1 className="text-2xl font-bold text-gray-900">Relatório</h1>
+        </div>
+
+        {/* Filtros de Data */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Mês" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os meses</SelectItem>
+                {months.map(month => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os anos</SelectItem>
+                {availableYears.map(year => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Botões de alternância */}
@@ -201,7 +270,7 @@ const ReportPage = () => {
           </>
         ) : (
           <div className="bg-white rounded-lg p-8 mb-6 text-center shadow-sm">
-            <p className="text-gray-500">Nenhuma despesa registrada ainda.</p>
+            <p className="text-gray-500">Nenhuma despesa encontrada para o período selecionado.</p>
           </div>
         )}
 

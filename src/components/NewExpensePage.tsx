@@ -165,6 +165,8 @@ const NewExpensePage = () => {
                 </span>
                 <Input
                   type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*[.,]?[0-9]*"
                   value={currentValue}
                   onChange={(e) => setCurrentValue(e.target.value)}
                   onKeyPress={handleKeyPress}
