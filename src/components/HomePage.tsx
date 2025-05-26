@@ -1,10 +1,19 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Settings, BarChart3, History, List } from 'lucide-react';
+import WelcomeScreen from './WelcomeScreen';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    const welcomeHidden = localStorage.getItem('welcome-screen-hidden');
+    if (!welcomeHidden) {
+      setShowWelcome(true);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -56,6 +65,8 @@ const HomePage = () => {
           </button>
         </div>
       </div>
+
+      {showWelcome && <WelcomeScreen onClose={() => setShowWelcome(false)} />}
     </div>
   );
 };
