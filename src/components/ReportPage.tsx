@@ -1,11 +1,9 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Upload } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useExpense } from '../contexts/ExpenseContext';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SubcategoryData {
@@ -23,8 +21,7 @@ interface CategoryData {
 
 const ReportPage = () => {
   const navigate = useNavigate();
-  const { categories, expenses, exportData, importData } = useExpense();
-  const { toast } = useToast();
+  const { categories, expenses } = useExpense();
   const [viewType, setViewType] = useState<'category' | 'subcategory'>('category');
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>('all');
 
@@ -79,66 +76,6 @@ const ReportPage = () => {
     const hasExpenses = expenses.some(expense => expense.subcategoryId === sub.id);
     return hasExpenses;
   });
-
-  const handleExportData = () => {
-    try {
-      const dataStr = exportData();
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `despesas_backup_${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Dados exportados com sucesso!",
-        description: "O arquivo foi baixado para seu dispositivo.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao exportar dados",
-        description: "Ocorreu um erro durante a exportação.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const jsonData = e.target?.result as string;
-        const success = importData(jsonData);
-        
-        if (success) {
-          toast({
-            title: "Dados importados com sucesso!",
-            description: "Todos os dados foram restaurados.",
-          });
-        } else {
-          toast({
-            title: "Erro ao importar dados",
-            description: "O arquivo não possui o formato correto.",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        toast({
-          title: "Erro ao importar dados",
-          description: "Ocorreu um erro durante a importação.",
-          variant: "destructive",
-        });
-      }
-    };
-    reader.readAsText(file);
-    event.target.value = '';
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -268,7 +205,7 @@ const ReportPage = () => {
           </div>
         )}
 
-        {/* Botões de ação */}
+        {/* Botão de ação */}
         <div className="space-y-3">
           <Button
             onClick={() => navigate('/nova-despesa')}
@@ -276,34 +213,6 @@ const ReportPage = () => {
           >
             Adicionar Mais Despesas
           </Button>
-
-          <Button
-            onClick={handleExportData}
-            variant="secondary"
-            className="w-full py-3 text-lg"
-          >
-            <Download className="w-5 h-5 mr-2" />
-            Exportar Dados
-          </Button>
-
-          <div className="relative">
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleImportData}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              id="import-file"
-            />
-            <Button
-              variant="outline"
-              className="w-full py-3 text-lg border-2 border-orange-300 text-orange-700 hover:bg-orange-50"
-            >
-              <label htmlFor="import-file" className="cursor-pointer flex items-center justify-center w-full h-full">
-                <Upload className="w-5 h-5 mr-2" />
-                Restaurar Dados
-              </label>
-            </Button>
-          </div>
         </div>
       </div>
     </div>
