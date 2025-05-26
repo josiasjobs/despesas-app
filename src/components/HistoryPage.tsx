@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit2, Trash2 } from 'lucide-react';
@@ -24,6 +23,7 @@ const HistoryPage = () => {
   const [editDate, setEditDate] = useState('');
   const [editSubcategory, setEditSubcategory] = useState('');
   const [filter, setFilter] = useState('all');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Ordenar despesas por data (mais recente primeiro)
   const sortedExpenses = [...expenses].sort((a, b) => 
@@ -48,6 +48,7 @@ const HistoryPage = () => {
     setEditAmount(expense.amount.toFixed(2).replace('.', ','));
     setEditDate(expense.date);
     setEditSubcategory(expense.subcategoryId);
+    setIsDialogOpen(true);
   };
 
   const saveEdit = () => {
@@ -58,12 +59,14 @@ const HistoryPage = () => {
       if (amount > 0 && subcategory) {
         updateExpense(editingExpense, amount, editDate, editSubcategory, subcategory.categoryId);
         setEditingExpense(null);
+        setIsDialogOpen(false);
       }
     }
   };
 
   const cancelEdit = () => {
     setEditingExpense(null);
+    setIsDialogOpen(false);
   };
 
   return (
@@ -108,8 +111,6 @@ const HistoryPage = () => {
               
               if (!subcategory || !category) return null;
 
-              const isEditing = editingExpense === expense.id;
-
               return (
                 <div key={expense.id} className="bg-white rounded-lg p-4 shadow-sm">
                   <div className="flex items-center justify-between">
@@ -131,80 +132,14 @@ const HistoryPage = () => {
                     </div>
                     
                     <div className="flex space-x-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => startEdit(expense)}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Editar Despesa</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium mb-2">Subcategoria</label>
-                              <Select value={editSubcategory} onValueChange={setEditSubcategory}>
-                                <SelectTrigger>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {allSubcategories.map(sub => (
-                                    <SelectItem key={sub.id} value={sub.id}>
-                                      <div className="flex items-center">
-                                        <div 
-                                          className="w-3 h-3 rounded-full mr-2" 
-                                          style={{ backgroundColor: sub.categoryColor }}
-                                        />
-                                        <span>{sub.name}</span>
-                                        <span className="text-gray-500 ml-2">({sub.categoryName})</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm font-medium mb-2">Data</label>
-                              <Input
-                                type="date"
-                                value={editDate}
-                                onChange={(e) => setEditDate(e.target.value)}
-                              />
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm font-medium mb-2">Valor</label>
-                              <div className="relative">
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                  R$
-                                </span>
-                                <Input
-                                  type="text"
-                                  value={editAmount}
-                                  onChange={(e) => setEditAmount(e.target.value)}
-                                  className="pl-10"
-                                />
-                              </div>
-                            </div>
-                            
-                            <div className="flex space-x-2">
-                              <Button onClick={saveEdit} className="flex-1">
-                                Salvar
-                              </Button>
-                              <Button onClick={cancelEdit} variant="outline" className="flex-1">
-                                Cancelar
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => startEdit(expense)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
                       
                       <Button 
                         variant="ghost" 
@@ -225,6 +160,72 @@ const HistoryPage = () => {
             </div>
           )}
         </div>
+
+        {/* Dialog de edição */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Despesa</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Subcategoria</label>
+                <Select value={editSubcategory} onValueChange={setEditSubcategory}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allSubcategories.map(sub => (
+                      <SelectItem key={sub.id} value={sub.id}>
+                        <div className="flex items-center">
+                          <div 
+                            className="w-3 h-3 rounded-full mr-2" 
+                            style={{ backgroundColor: sub.categoryColor }}
+                          />
+                          <span>{sub.name}</span>
+                          <span className="text-gray-500 ml-2">({sub.categoryName})</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Data</label>
+                <Input
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Valor</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    R$
+                  </span>
+                  <Input
+                    type="text"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex space-x-2">
+                <Button onClick={saveEdit} className="flex-1">
+                  Salvar
+                </Button>
+                <Button onClick={cancelEdit} variant="outline" className="flex-1">
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
