@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, Plus } from 'lucide-react';
 import { useExpense } from '../contexts/ExpenseContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -28,8 +28,7 @@ const NewExpensePage = () => {
 
   const sessionTotal = sessionValues.reduce((sum, val) => sum + val, 0);
 
-  const handleValueSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleValueSubmit = () => {
     console.log('handleValueSubmit called');
     console.log('currentValue:', currentValue);
     console.log('selectedSubcategory:', selectedSubcategory);
@@ -54,15 +53,20 @@ const NewExpensePage = () => {
     }
   };
 
-  const removeSessionValue = (index: number) => {
-    setSessionValues(prev => prev.filter((_, i) => i !== index));
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleValueSubmit();
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleValueSubmit(e);
+      handleValueSubmit();
     }
+  };
+
+  const removeSessionValue = (index: number) => {
+    setSessionValues(prev => prev.filter((_, i) => i !== index));
   };
 
   const finalizarCategoria = () => {
@@ -158,9 +162,9 @@ const NewExpensePage = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Valor
             </label>
-            <form onSubmit={handleValueSubmit}>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+            <form onSubmit={handleFormSubmit}>
+              <div className="relative flex">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 z-10">
                   R$
                 </span>
                 <Input
@@ -169,15 +173,22 @@ const NewExpensePage = () => {
                   pattern="[0-9]*[.,]?[0-9]*"
                   value={currentValue}
                   onChange={(e) => setCurrentValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyDown}
                   placeholder="0,00"
-                  className="pl-10 text-lg font-medium border-2 border-blue-500 focus:border-blue-600"
+                  className="pl-10 pr-12 text-lg font-medium border-2 border-blue-500 focus:border-blue-600 flex-1"
                 />
+                <Button
+                  type="button"
+                  onClick={handleValueSubmit}
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-blue-500 hover:bg-blue-600"
+                  disabled={!currentValue || !selectedSubcategory}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
               </div>
-              <button type="submit" className="hidden">Submit</button>
             </form>
             <p className="text-sm text-gray-500 mt-1">
-              Pressione Enter para adicionar rapidamente
+              Pressione Enter ou clique no + para adicionar rapidamente
             </p>
           </div>
 
