@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,6 +22,8 @@ interface ShoppingList {
 const ShoppingListPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
   
   const [listTitle, setListTitle] = useState('');
   const [currentItem, setCurrentItem] = useState({
@@ -31,6 +32,27 @@ const ShoppingListPage = () => {
     value: ''
   });
   const [items, setItems] = useState<ShoppingItem[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (editId) {
+      loadListForEditing(editId);
+    }
+  }, [editId]);
+
+  const loadListForEditing = (listId: string) => {
+    const savedLists = localStorage.getItem('shopping-lists');
+    if (savedLists) {
+      const lists: ShoppingList[] = JSON.parse(savedLists);
+      const listToEdit = lists.find(list => list.id === listId);
+      
+      if (listToEdit) {
+        setListTitle(listToEdit.title);
+        setItems(listToEdit.items);
+        setIsEditing(true);
+      }
+    }
+  };
 
   const addItem = () => {
     if (currentItem.name && currentItem.value) {
@@ -62,28 +84,48 @@ const ShoppingListPage = () => {
 
   const saveList = () => {
     if (listTitle && items.length > 0) {
-      const newList: ShoppingList = {
-        id: Date.now().toString(),
-        title: listTitle,
-        items: items,
-        createdAt: new Date().toISOString()
-      };
-
-      // Salvar no localStorage
       const savedLists = localStorage.getItem('shopping-lists');
       const lists: ShoppingList[] = savedLists ? JSON.parse(savedLists) : [];
-      lists.push(newList);
-      localStorage.setItem('shopping-lists', JSON.stringify(lists));
 
-      toast({
-        title: "Lista salva com sucesso!",
-        description: `Lista "${listTitle}" foi criada com ${items.length} itens.`,
-      });
+      if (isEditing && editId) {
+        // Atualizar lista existente
+        const updatedLists = lists.map(list => 
+          list.id === editId 
+            ? { ...list, title: listTitle, items: items }
+            : list
+        );
+        localStorage.setItem('shopping-lists', JSON.stringify(updatedLists));
+        
+        toast({
+          title: "Lista atualizada com sucesso!",
+          description: `Lista "${listTitle}" foi atualizada com ${items.length} itens.`,
+        });
+      } else {
+        // Criar nova lista
+        const newList: ShoppingList = {
+          id: Date.now().toString(),
+          title: listTitle,
+          items: items,
+          createdAt: new Date().toISOString()
+        };
+        
+        lists.push(newList);
+        localStorage.setItem('shopping-lists', JSON.stringify(lists));
+        
+        toast({
+          title: "Lista salva com sucesso!",
+          description: `Lista "${listTitle}" foi criada com ${items.length} itens.`,
+        });
+      }
 
       // Limpar formulário
       setListTitle('');
       setItems([]);
       setCurrentItem({ name: '', quantity: 1, value: '' });
+      setIsEditing(false);
+      
+      // Navegar para as listas salvas
+      navigate('/listas-salvas');
     }
   };
 
@@ -96,7 +138,9 @@ const ShoppingListPage = () => {
           <button onClick={() => navigate('/')} className="mr-4">
             <ArrowLeft className="w-6 h-6 text-gray-600" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Lista de Compras</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEditing ? 'Editar Lista' : 'Lista de Compras'}
+          </h1>
         </div>
 
         <div className="space-y-6">

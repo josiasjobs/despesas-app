@@ -7,6 +7,7 @@ import CategoriesPage from '../components/CategoriesPage';
 import ReportPage from '../components/ReportPage';
 import HistoryPage from '../components/HistoryPage';
 import ShoppingListPage from '../components/ShoppingListPage';
+import SavedShoppingListsPage from '../components/SavedShoppingListsPage';
 import { ExpenseProvider } from '../contexts/ExpenseContext';
 
 const ExpenseApp = () => {
@@ -18,6 +19,7 @@ const ExpenseApp = () => {
             <Route path="/" element={<HomePage />} />
             <Route path="/nova-despesa" element={<NewExpensePage />} />
             <Route path="/lista-compras" element={<ShoppingListPage />} />
+            <Route path="/listas-salvas" element={<SavedShoppingListsPage />} />
             <Route path="/categorias" element={<CategoriesPage />} />
             <Route path="/relatorio" element={<ReportPage />} />
             <Route path="/historico" element={<HistoryPage />} />

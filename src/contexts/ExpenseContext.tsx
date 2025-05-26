@@ -23,6 +23,20 @@ interface Expense {
   categoryId: string;
 }
 
+interface ShoppingItem {
+  id: string;
+  name: string;
+  quantity: number;
+  value: number;
+}
+
+interface ShoppingList {
+  id: string;
+  title: string;
+  items: ShoppingItem[];
+  createdAt: string;
+}
+
 interface ExpenseContextType {
   categories: Category[];
   expenses: Expense[];
@@ -180,7 +194,15 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const exportData = (): string => {
-    return JSON.stringify({ categories, expenses }, null, 2);
+    // Incluir listas de compras na exportação
+    const savedLists = localStorage.getItem('shopping-lists');
+    const shoppingLists = savedLists ? JSON.parse(savedLists) : [];
+    
+    return JSON.stringify({ 
+      categories, 
+      expenses, 
+      shoppingLists 
+    }, null, 2);
   };
 
   const importData = (jsonData: string): boolean => {
@@ -189,6 +211,12 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (data.categories && data.expenses) {
         setCategories(data.categories);
         setExpenses(data.expenses);
+        
+        // Importar listas de compras se existirem
+        if (data.shoppingLists) {
+          localStorage.setItem('shopping-lists', JSON.stringify(data.shoppingLists));
+        }
+        
         return true;
       }
       return false;
