@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Settings, BarChart3, History, List, Shield } from 'lucide-react';
+import { Plus, Settings, BarChart3, History, List, Shield, Download } from 'lucide-react';
 import WelcomeScreen from './WelcomeScreen';
 import DataExportImportDialog from './DataExportImportDialog';
 
@@ -9,13 +9,55 @@ const HomePage = () => {
   const navigate = useNavigate();
   const [showWelcome, setShowWelcome] = useState(false);
   const [showDataDialog, setShowDataDialog] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     const welcomeHidden = localStorage.getItem('welcome-screen-hidden');
     if (!welcomeHidden) {
       setShowWelcome(true);
     }
+
+    // Detectar se o app já está instalado
+    const checkIfInstalled = () => {
+      if (window.matchMedia('(display-mode: standalone)').matches || 
+          (window.navigator as any).standalone) {
+        setIsInstalled(true);
+      }
+    };
+
+    checkIfInstalled();
+
+    // Listener para o evento beforeinstallprompt
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    // Listener para quando o app é instalado
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 flex flex-col">
@@ -58,13 +100,37 @@ const HomePage = () => {
             <span className="text-lg font-medium">Relatório</span>
           </button>
 
-          <button
-            onClick={() => navigate('/historico')}
-            className="bg-gray-600 hover:bg-gray-700 text-white p-6 rounded-2xl flex flex-col items-center justify-center min-h-[140px] transition-colors col-span-2"
-          >
-            <History className="w-8 h-8 mb-2" />
-            <span className="text-lg font-medium">Histórico</span>
-          </button>
+          {/* Botão de Histórico - ocupa 2 colunas quando o app está instalado ou não há prompt de instalação */}
+          {(isInstalled || !deferredPrompt) && (
+            <button
+              onClick={() => navigate('/historico')}
+              className="bg-gray-600 hover:bg-gray-700 text-white p-6 rounded-2xl flex flex-col items-center justify-center min-h-[140px] transition-colors col-span-2"
+            >
+              <History className="w-8 h-8 mb-2" />
+              <span className="text-lg font-medium">Histórico</span>
+            </button>
+          )}
+
+          {/* Botões separados quando o app não está instalado e há prompt disponível */}
+          {!isInstalled && deferredPrompt && (
+            <>
+              <button
+                onClick={() => navigate('/historico')}
+                className="bg-gray-600 hover:bg-gray-700 text-white p-6 rounded-2xl flex flex-col items-center justify-center min-h-[140px] transition-colors"
+              >
+                <History className="w-8 h-8 mb-2" />
+                <span className="text-lg font-medium">Histórico</span>
+              </button>
+
+              <button
+                onClick={handleInstallClick}
+                className="bg-indigo-500 hover:bg-indigo-600 text-white p-6 rounded-2xl flex flex-col items-center justify-center min-h-[140px] transition-colors"
+              >
+                <Download className="w-8 h-8 mb-2" />
+                <span className="text-lg font-medium">Instalar App</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -88,6 +154,13 @@ const HomePage = () => {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Rodapé com créditos */}
+      <div className="max-w-md mx-auto mt-4">
+        <div className="text-center text-xs text-gray-500 py-3">
+          Desenvolvido por Josias da Rosa
         </div>
       </div>
 
